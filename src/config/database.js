@@ -1,4 +1,5 @@
 const mysql = require("mysql2");
+const { Sequelize } = require("sequelize");
 
 // Create the connection pool. The pool-specific settings are the defaults
 const dbPool = mysql.createPool({
@@ -8,4 +9,9 @@ const dbPool = mysql.createPool({
     password: process.env.DB_PASSWORD,
 });
 
-module.exports = dbPool.promise();
+const db = new Sequelize("express-jwt", "root", "3lpsycongr0", {
+    host: "localhost",
+    dialect: "mysql",
+});
+
+module.exports = db;
