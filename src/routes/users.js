@@ -8,12 +8,12 @@ const router = express.Router();
 
 router.get("/", authMiddleware, userController.getUser);
 
+router.get("/:id", authMiddleware, userController.getUserDetail);
+
 router.post("/register", userController.registerUser);
 
 router.post("/login", userController.loginUser);
 
-router.put("/update/:id", userController.updateUser);
-
-router.delete("/delete/:id", userController.deleteUser);
+router.put("/update", authMiddleware, userController.updateUser);
 
 module.exports = router;

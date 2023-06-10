@@ -1,19 +1,44 @@
-const usersModel = require("../models/users");
+const {
+    queryGetAllUsers,
+    queryGetUserDetailById,
+    queryGetUserDetailByEmail,
+    usersModel,
+    queryCreateNewUser,
+} = require("../models/users");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { where } = require("sequelize");
 
 const getUser = async (req, res) => {
     try {
-        const data = await usersModel.findOne({
-            where: { email: req.email },
-            attributes: ["id", "email", "name"],
-        });
-        console.log(req.email);
+        const [rows] = await queryGetAllUsers();
         res.json({
             message: "Success get user",
-            data,
+            data: rows,
         });
     } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: error,
+        });
+    }
+};
+
+const getUserDetail = async (req, res) => {
+    try {
+        const { params } = req;
+        const [rows] = await queryGetUserDetailById(params.id);
+        if (rows.length === 0) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+        res.json({
+            message: "Success get user",
+            data: rows[0],
+        });
+    } catch (error) {
+        console.log(error);
         res.status(500).json({
             message: error,
         });
@@ -54,19 +79,25 @@ const registerUser = async (req, res) => {
             message: "Password minimal 8 karakter",
         });
     }
+    const [checkEmailExist] = await queryGetUserDetailByEmail(email);
+    if (checkEmailExist.length > 0) {
+        return res.status(400).json({
+            message: "Email sudah terdaftar",
+        });
+    }
     const salt = await bcrypt.genSalt();
     const hashPassword = await bcrypt.hash(password, salt);
     try {
-        await usersModel.create({
+        const body = {
             name,
             email,
-            password: hashPassword,
-        });
+        };
+        await queryCreateNewUser(body);
         res.status(201).json({
             message: "Succes register user",
+            data: body,
         });
     } catch (error) {
-        console.log(error);
         res.status(500).json({
             message: error,
         });
@@ -126,7 +157,7 @@ const loginUser = async (req, res) => {
                     maxAge: 24 * 60 * 60 * 1000,
                 });
                 res.json({
-                    message: "Login berhasil",
+                    message: "Success login",
                     token: accessToken,
                 });
             }
@@ -139,28 +170,30 @@ const loginUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-    const { id } = req.params;
-    const { body } = req;
-    try {
-        await usersModel.updateUser(body, id);
-        res.status(201).json({
-            message: `Success update user ${body.name}`,
-            data: { id, ...body },
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: error,
+    const { name } = req.body;
+    console.log(req.email);
+    const user = await usersModel.findOne({
+        where: { email: req.email },
+    });
+    if (!user) {
+        return res.status(400).json({
+            message: "Akun tidak ditemukan",
         });
     }
-};
-
-const deleteUser = async (req, res) => {
-    const { id } = req.params;
     try {
-        await usersModel.deleteUser(id);
-        res.json({
-            message: `Success delete user`,
-            data: null,
+        await usersModel.update(
+            { name },
+            {
+                where: {
+                    email: req.email,
+                },
+            }
+        );
+        res.status(500).json({
+            message: "Sukses update nama",
+            data: {
+                name,
+            },
         });
     } catch (error) {
         res.status(500).json({
@@ -171,8 +204,8 @@ const deleteUser = async (req, res) => {
 
 module.exports = {
     getUser,
+    getUserDetail,
     registerUser,
     updateUser,
-    deleteUser,
     loginUser,
 };

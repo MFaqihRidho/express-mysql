@@ -10,6 +10,7 @@ const auth = (req, res, next) => {
                     message: "Unathorized",
                 });
             } else {
+                req.idUser = decoded.id;
                 req.email = decoded.email;
                 return next();
             }
