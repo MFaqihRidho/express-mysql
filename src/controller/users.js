@@ -67,108 +67,6 @@ const getUserDetail = async (req, res) => {
 //     }
 // };
 
-const registerUser = async (req, res) => {
-    const { name, email, password, confirmPassword } = req.body;
-    if (password !== confirmPassword) {
-        return res.status(400).json({
-            message: "Password tidak sama",
-        });
-    }
-    if (password.length < 8) {
-        return res.status(400).json({
-            message: "Password minimal 8 karakter",
-        });
-    }
-    const [checkEmailExist] = await queryGetUserDetailByEmail(email);
-    if (checkEmailExist.length > 0) {
-        return res.status(400).json({
-            message: "Email sudah terdaftar",
-        });
-    }
-    const salt = await bcrypt.genSalt();
-    const hashPassword = await bcrypt.hash(password, salt);
-    try {
-        const body = {
-            name,
-            email,
-        };
-        await queryCreateNewUser(body);
-        res.status(201).json({
-            message: "Succes register user",
-            data: body,
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: error,
-        });
-    }
-};
-
-const loginUser = async (req, res) => {
-    const { email, password } = req.body;
-    if (!password) {
-        return res.status(400).json({
-            message: "Password kosong",
-        });
-    }
-    if (!email) {
-        return res.status(400).json({
-            message: "Email kosong",
-        });
-    }
-    try {
-        const user = await usersModel.findOne({
-            where: { email },
-        });
-        if (user) {
-            const passwordMatch = await bcrypt.compare(password, user.password);
-            if (!passwordMatch) {
-                res.status(400).json({
-                    message: "Password salah",
-                });
-            } else {
-                const id = user.id;
-                const name = user.name;
-                const email = user.email;
-                const accessToken = jwt.sign(
-                    { id, name, email },
-                    process.env.ACCESS_TOKEN_SECRET,
-                    {
-                        expiresIn: "1d",
-                    }
-                );
-                const refreshToken = jwt.sign(
-                    { id, name, email },
-                    process.env.REFRESH_TOKEN_SECRET,
-                    {
-                        expiresIn: "7d",
-                    }
-                );
-                await usersModel.update(
-                    { refresh_token: refreshToken },
-                    {
-                        where: {
-                            id,
-                        },
-                    }
-                );
-                res.cookie("refreshToken", refreshToken, {
-                    httpOnly: true,
-                    maxAge: 24 * 60 * 60 * 1000,
-                });
-                res.json({
-                    message: "Success login",
-                    token: accessToken,
-                });
-            }
-        } else {
-            res.status(400).json({
-                message: "Account tidak ditemukan",
-            });
-        }
-    } catch (error) {}
-};
-
 const updateUser = async (req, res) => {
     const { name } = req.body;
     console.log(req.email);
@@ -205,7 +103,5 @@ const updateUser = async (req, res) => {
 module.exports = {
     getUser,
     getUserDetail,
-    registerUser,
     updateUser,
-    loginUser,
 };

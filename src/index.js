@@ -33,6 +33,10 @@ app.post("/upload", upload.single("image"), (req, res) => {
 const users = require("./routes/users");
 app.use("/users", users);
 
+// users
+const auths = require("./routes/auths");
+app.use("/auths", auths);
+
 // blogs
 const blogs = require("./routes/blogs");
 app.use("/blogs", blogs);

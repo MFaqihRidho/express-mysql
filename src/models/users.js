@@ -53,10 +53,11 @@ const queryCreateNewUser = (body) => {
     return dbPool.execute(SQLQuery);
 };
 
-const updateUser = (body, id) => {
-    const SQLQuery = `UPDATE users 
-    SET name='${body.name}', email='${body.email}', address='${body.address}'
-    WHERE id=${id}`;
+const queryUpdateUserRefreshToken = (body, id) => {
+    const SQLQuery = `
+    UPDATE users 
+    SET refresh_token = '${body.refreshToken}'
+    WHERE id = ${id}`;
     return dbPool.execute(SQLQuery);
 };
 
@@ -70,7 +71,7 @@ module.exports = {
     queryGetUserDetailById,
     queryGetUserDetailByEmail,
     queryCreateNewUser,
-    updateUser,
+    queryUpdateUserRefreshToken,
     deleteUser,
     usersModel,
 };

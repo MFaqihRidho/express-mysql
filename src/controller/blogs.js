@@ -1,20 +1,26 @@
 const { where, Model } = require("sequelize");
-const blogsModel = require("../models/blogs");
+const { blogsModel, queryGetAllBlogs } = require("../models/blogs");
 const usersModel = require("../models/users");
 
 const getAllBlog = async (req, res) => {
     try {
-        usersModel.hasMany(Post, { foreignKey: "user_id" });
-        blogsModel.belongsTo(User, { foreignKey: "user_id" });
-
-        blogsModel.find({ include: [usersModel] });
-        const rawData = await blogsModel.findAll();
+        const [rawData] = await queryGetAllBlogs();
+        const mappedData = rawData.map((blog) => ({
+            id: blog.id,
+            title: blog.title,
+            content: blog.content,
+            author: {
+                email: blog.author_email,
+                name: blog.author_name,
+                headline: blog.author_headline,
+            },
+        }));
         res.json({
             message: "Success get Blog",
-            data: rawData,
-            author: data,
+            data: mappedData,
         });
     } catch (error) {
+        console.log(error);
         res.status(500).json({
             message: error,
         });
